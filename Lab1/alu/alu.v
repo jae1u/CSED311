@@ -1,11 +1,11 @@
+`include "alu_func.v"
+
 module ALU #(parameter data_width = 16)
             (input [data_width-1:0] A,
              input [data_width-1:0] B,
              input [3:0] FuncCode,
              output reg [data_width-1:0] C,
              output reg OverflowFlag);
-    
-    `include "alu_func.v"
     
     initial begin
         C            = 0;
