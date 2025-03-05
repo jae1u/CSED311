@@ -3,11 +3,11 @@
 module item_dispenser (
     input [`kNumItems-1:0] i_select_item,
     input [`kNumItems-1:0] o_available_item,
-    input [`kTotalBits:0] balance,
+    input [`kTotalBits-1:0] balance,
     output reg [`kNumItems-1:0] o_output_item,
-    output reg [`kTotalBits:0] item_cost);
+    output reg [`kTotalBits-1:0] item_cost);
 
-    wire [`kTotalBits:0] item_price [`kNumItems-1:0]; // Price of each item
+    wire [`kTotalBits-1:0] item_price [`kNumItems-1:0]; // Price of each item
     assign item_price[0] = 400;
     assign item_price[1] = 500;
     assign item_price[2] = 1000;
