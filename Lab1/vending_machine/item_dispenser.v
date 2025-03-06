@@ -5,7 +5,7 @@ module item_dispenser (
     input [`kNumItems-1:0] o_available_item,
     input [`kTotalBits-1:0] balance,
     output reg [`kNumItems-1:0] o_output_item,
-    output reg [`kTotalBits-1:0] item_cost);
+    output reg [`kTotalBits-1:0] cost);
 
     wire [`kTotalBits-1:0] item_price [`kNumItems-1:0]; // Price of each item
     assign item_price[0] = 400;
@@ -21,11 +21,11 @@ module item_dispenser (
         selected_cost = selected[0] * item_price[0] + selected[1] * item_price[1] + selected[2] * item_price[2] + selected[3] * item_price[3];
         if (balance >= selected_cost) begin
             o_output_item = selected;
-            item_cost = selected_cost;
+            cost = selected_cost;
         end
         else begin
             o_output_item = 0;
-            item_cost = 0;
+            cost = 0;
         end
     end
 

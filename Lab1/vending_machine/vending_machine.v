@@ -11,9 +11,7 @@ module vending_machine (
     output [`kNumCoins-1:0] o_return_coin); // Sign of the coin return
 
     wire [`kTotalBits-1:0] balance;
-    wire [`kTotalBits-1:0] coin_cost;
-    wire [`kTotalBits-1:0] item_cost;
-    wire [`kTotalBits-1:0] cost = coin_cost + item_cost;
+    wire [`kTotalBits-1:0] cost;
 
     availability_calculator availability_calculator_module(
     .balance(balance),
@@ -30,14 +28,13 @@ module vending_machine (
     .clk(clk),
     .i_trigger_return(i_trigger_return),
     .balance(balance),
-    .o_return_coin(o_return_coin),
-    .coin_cost(coin_cost));
+    .o_return_coin(o_return_coin));
 
     item_dispenser item_dispenser_module(
     .i_select_item(i_select_item),
     .o_available_item(o_available_item),
     .balance(balance),
     .o_output_item(o_output_item),
-    .item_cost(item_cost));
+    .cost(cost));
 
 endmodule
