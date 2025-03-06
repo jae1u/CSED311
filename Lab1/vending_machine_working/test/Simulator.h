@@ -163,7 +163,7 @@ public:
 
 template<class M>
 void SeqSimulator<M>::init() {
-    this->m.clk = (int)!posedge;
+    this->m.clk = (int)posedge;
     Simulator<M>::init();
 }
 
