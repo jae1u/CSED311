@@ -1,19 +1,27 @@
+`include "vending_machine_def.v"
+
 module timer (
     input clk,
     input reset_n,
-    output reg trigger
-);
-    reg signed [31:0] counter;
+    output reg trigger);
+
+    reg signed [`kTotalBits-1:0] counter;
 
     always @(posedge clk) begin
-        if (!reset_n)
-            counter = 100;
-        else if (counter >= 0)
-            --counter;  // counter goes down to -1
-
-        if (counter == 0)
-            trigger = 1;
-        else
-            trigger = 0;
+        if (!reset_n) begin
+            counter <= `kWaitTime - 1;
+            trigger <= 0;
+        end
+        else begin
+            if (counter > 0)
+                counter <= counter - 1; // counter goes down to -1
+            else if (counter == 0) begin
+                trigger <= 1;
+                counter <= counter - 1;
+            end
+            else
+                trigger <= 0;
+        end
     end
+
 endmodule

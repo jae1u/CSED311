@@ -21,7 +21,9 @@ module coin_dispenser (
 
     always @(posedge clk) begin
         if (active) begin
-            if (balance == 0)
+            if (balance == 0) begin
+                
+            end
 
         end
 

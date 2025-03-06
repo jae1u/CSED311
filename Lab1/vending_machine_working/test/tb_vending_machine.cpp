@@ -124,6 +124,6 @@ public:
 
 
 int main(int argc, char** argv) {
-    // VendingMachineSimulator s;
+    VendingMachineSimulator s;
     // return s.main();
 }
