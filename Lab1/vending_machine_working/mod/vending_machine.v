@@ -1,60 +1,40 @@
-// Title         : vending_machine.v
-// Author      : Jae-Eon Jo (Jojaeeon@postech.ac.kr) 
-//			     Dongup Kwon (nankdu7@postech.ac.kr) (2015.03.30)
-//			     Jaehun Ryu (jaehunryu@postech.ac.kr) (2021.03.07)
-
 `include "vending_machine_def.v"
 
-
 module vending_machine (
-	clk,							// Clock signal
-	reset_n,						// Reset signal (active-low)
+    input clk, // Clock signal
+    input reset_n, // Reset signal (active-low)
+    input [`kNumCoins-1:0] i_input_coin, // coin is inserted.
+    input [`kNumItems-1:0] i_select_item, // item is selected.
+    input i_trigger_return, // change-return is triggered
+    output [`kNumItems-1:0] o_available_item, // Sign of the item availability
+    output [`kNumItems-1:0] o_output_item, // Sign of the item withdrawal
+    output [`kNumCoins-1:0] o_return_coin); // Sign of the coin return
 
-	i_input_coin,				// coin is inserted.
-	i_select_item,				// item is selected.
-	i_trigger_return,			// change-return is triggered 
+    wire [`kTotalBits-1:0] balance;
+    wire [`kTotalBits-1:0] cost;
 
-	o_available_item,			// Sign of the item availability
-	o_output_item,			// Sign of the item withdrawal
-	o_return_coin				// Sign of the coin return
-);
+    availability_calculator availability_calculator_module(
+    .balance(balance),
+    .o_available_item(o_available_item));
 
-	// Ports Declaration
-	// Do not modify the module interface
-	input clk;
-	input reset_n;
-	
-	input [`kNumCoins-1:0] i_input_coin;
-	input [`kNumItems-1:0] i_select_item;
-	input i_trigger_return;
-		
-	output [`kNumItems-1:0] o_available_item;
-	output [`kNumItems-1:0] o_output_item;
-	output [`kNumCoins-1:0] o_return_coin;
+    balance_calculator balance_calculator_module(
+    .clk(clk),
+    .reset_n(reset_n),
+    .i_input_coin(i_input_coin),
+    .cost(cost),
+    .balance(balance));
 
+    coin_dispenser coin_dispenser_module(
+    .clk(clk),
+    .i_trigger_return(i_trigger_return),
+    .balance(balance),
+    .o_return_coin(o_return_coin));
 
-	
-
-	// Do not modify the values.
-	wire [31:0] item_price [`kNumItems-1:0];	// Price of each item
-	wire [31:0] coin_value [`kNumCoins-1:0];	// Value of each coin
-	assign item_price[0] = 400;
-	assign item_price[1] = 500;
-	assign item_price[2] = 1000;
-	assign item_price[3] = 2000;
-	assign coin_value[0] = 100;
-	assign coin_value[1] = 500;
-	assign coin_value[2] = 1000;
-
-	reg [31:0] cost;
-	wire [31:0] balance;
-
-	balance_calculator m(
-		.clk(clk),
-		.reset_n(reset_n),
-		.i_input_coin(i_input_coin),
-		.cost(cost),
-		.balance(balance)
-	);
+    item_dispenser item_dispenser_module(
+    .i_select_item(i_select_item),
+    .o_available_item(o_available_item),
+    .balance(balance),
+    .o_output_item(o_output_item),
+    .cost(cost));
 
 endmodule

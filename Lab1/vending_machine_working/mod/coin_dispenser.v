@@ -2,44 +2,67 @@
 
 module coin_dispenser (
     input clk,
-    input ret,
-    input reset_n,
-    input [31:0] init_balance,
-    output reg [`kNumCoins-1:0] o_return_coin,
-    output reg done
-);
-    reg [31:0] balance;
-    reg active;
-    wire trigger;
+    input i_trigger_return,
+    input [`kTotalBits-1:0] balance,
+    output reg [`kNumCoins-1:0] o_return_coin);
 
-    assign trigger = clk & ret;
+    wire [`kTotalBits-1:0] coin_value [`kNumCoins-1:0]; // Value of each coin
+    assign coin_value[0] = 100;
+    assign coin_value[1] = 500;
+    assign coin_value[2] = 1000;
 
-    always @(posedge trigger) begin
-        balance = init_balance;
-        active = 1;
+    reg [`kTotalBits-1:0] change_due;
+    reg [`kTotalBits-1:0] change_popped;
+    reg [1:0] trigger;
+
+    always @(posedge clk) begin
+        if (i_trigger_return) begin
+            change_due <= balance;
+            change_popped <= 0;
+            trigger <= 1;
+        end
     end
 
     always @(posedge clk) begin
-        if (active) begin
-            if (balance == 0) begin
-                
-            end
-
-        end
-
-        if (balance >= 1600)
-            o_return_coin <= 3'b111;
-        else if (balance >= 1500)
-            o_return_coin <= 3'b110;
-        else if (balance >= 1000)
-            o_return_coin <= 3'b100;
-        else if (balance >= 600)
-            o_return_coin <= 3'b011;
-        else if (balance >= 500)
-            o_return_coin <= 3'b010;
-        else if (balance >= 100)
-            o_return_coin <= 3'b001;
-        else
-            o_return_coin <= 3'b000;
+        if (trigger == 1)
+            trigger <= 2;
     end
+
+    always @(posedge clk) begin
+        if (trigger == 2) begin
+            if (change_due >= 1600) begin
+                o_return_coin <= 3'b111;
+                change_due <= change_due - 1600;
+                end
+            else if (change_due >= 1500) begin
+                o_return_coin <= 3'b110;
+                change_due <= change_due - 1500;
+                end
+            else if (change_due >= 1100) begin
+                o_return_coin <= 3'b101;
+                change_due <= change_due - 1100;
+                end
+            else if (change_due >= 1000) begin
+                o_return_coin <= 3'b100;
+                change_due <= change_due - 1000;
+                end
+            else if (change_due >= 600) begin
+                o_return_coin <= 3'b011;
+                change_due <= change_due - 600;
+                end
+            else if (change_due >= 500) begin
+                o_return_coin <= 3'b010;
+                change_due <= change_due - 500;
+                end
+            else if (change_due >= 100) begin
+                o_return_coin <= 3'b001;
+                change_due <= change_due - 100;
+                end
+            else begin
+                o_return_coin <= 3'b000;
+                trigger <= 0;
+                end
+        end
+    end
+
 endmodule
