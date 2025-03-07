@@ -12,6 +12,8 @@ module vending_machine (
 
     wire [`kTotalBits-1:0] balance;
     wire [`kTotalBits-1:0] cost;
+    // TODO: implement done
+    reg done;
 
     availability_calculator availability_calculator_module(
     .balance(balance),
@@ -26,11 +28,15 @@ module vending_machine (
 
     coin_dispenser coin_dispenser_module(
     .clk(clk),
-    .i_trigger_return(i_trigger_return),
+    .reset_n(reset_n),
+    .ret(i_trigger_return),
     .balance(balance),
-    .o_return_coin(o_return_coin));
+    .o_return_coin(o_return_coin),
+    .done(done));
 
     item_dispenser item_dispenser_module(
+    .clk(clk),
+    .reset_n(reset_n),
     .i_select_item(i_select_item),
     .o_available_item(o_available_item),
     .balance(balance),

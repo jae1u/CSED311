@@ -156,6 +156,7 @@ public:
     void step_one();
     void step(unsigned n = 1);
     void clock(unsigned n = 1);
+    void reset();
 public:
     int max_sim_time;
     bool posedge;
@@ -186,6 +187,14 @@ void SeqSimulator<M>::step(unsigned n) {
 template <class M>
 void SeqSimulator<M>::clock(unsigned n) {
     this->step(2*n);
+}
+
+template <class M>
+void SeqSimulator<M>::reset() {
+    this->m.reset_n = 0;
+    this->clock();
+    this->m.reset_n = 1;
+    clock();
 }
 
 #define SIMULATOR_MAIN(cls) \
