@@ -191,10 +191,11 @@ void SeqSimulator<M>::clock(unsigned n) {
 
 template <class M>
 void SeqSimulator<M>::reset() {
+    this->clock();
     this->m.reset_n = 0;
     this->clock();
     this->m.reset_n = 1;
-    clock();
+    // this->clock();
 }
 
 #define SIMULATOR_MAIN(cls) \
