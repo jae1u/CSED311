@@ -1,0 +1,1 @@
+`define kTotalBits 32
