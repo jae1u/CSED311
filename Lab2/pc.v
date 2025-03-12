@@ -9,7 +9,7 @@ module pc(
             current_pc <= 0;
         end
         else begin
-            current_pc <= next_pc + 4;
+            current_pc <= next_pc;
         end
     end
 
