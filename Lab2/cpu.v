@@ -12,6 +12,9 @@ module cpu(input reset,                     // positive reset signal
            input clk,                       // clock signal
            output is_halted,                // Whehther to finish simulation
            output [31:0] print_reg [0:31]); // TO PRINT REGISTER VALUES IN TESTBENCH (YOU SHOULD NOT USE THIS)
+
+  assign is_halted = is_ecall && (x17 == 10);
+
   /***** Wire declarations *****/
   wire [31:0] next_pc;
   wire [31:0] instruction;
@@ -38,6 +41,7 @@ module cpu(input reset,                     // positive reset signal
   reg [3:0] alu_op;
   reg [31:0] imm_gen_out;
   reg [31:0] alu_result;
+  reg [31:0] x17;
 
   // ---------- Update program counter ----------
   // PC must be updated on the rising edge (positive edge) of the clock.
@@ -70,13 +74,14 @@ module cpu(input reset,                     // positive reset signal
     .write_enable (write_enable), // input
     .rs1_dout (rs1_data),     // output
     .rs2_dout (rs2_data),     // output
-    .print_reg (print_reg)  //DO NOT TOUCH THIS
+    .print_reg (print_reg),  //DO NOT TOUCH THIS
+    .x17 (x17)
   );
 
 
   // ---------- Control Unit ----------
   control_unit ctrl_unit (
-    .part_of_inst(),  // input
+    .part_of_inst(instruction[6:0]),  // input
     .is_jal(is_jal),        // output
     .is_jalr(is_jalr),       // output
     .branch(branch),        // output

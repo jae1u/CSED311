@@ -7,7 +7,8 @@ module register_file(input	reset,
                      input write_enable,          // RegWrite signal
                      output [31:0] rs1_dout,   // output of rs 1
                      output [31:0] rs2_dout,   // output of rs 2
-                     output [31:0] print_reg [0:31]);
+                     output [31:0] print_reg [0:31],
+                     output reg [31:0] x17);
   integer i;
   // Register file
   reg [31:0] rf[0:31];
@@ -23,6 +24,7 @@ module register_file(input	reset,
     if (write_enable) begin
       rf[rd] <= rd_din;
     end
+    x17 <= rf[17];
   end
 
   // Initialize register file (do not touch)
