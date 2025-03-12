@@ -16,8 +16,8 @@ module register_file(input	reset,
   assign print_reg = rf;
 
   // Asynchronously read register file
-  assign rs1_dout = rf[rs1];
-  assign rs2_dout = rf[rs2];
+  assign rs1_dout = (rs1 == 0) ? 0 : rf[rs1];
+  assign rs2_dout = (rs2 == 0) ? 0 : rf[rs2];
 
   // Synchronously write data to the register file
   always @(posedge clk) begin
