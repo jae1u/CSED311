@@ -14,9 +14,9 @@ module instruction_memory #(parameter MEM_DEPTH = 1024) (input reset,
                   addr[1:0],
                   1'b0};
 
-  // TODO
   // Asynchronously read instruction from the memory 
   // (use imem_addr to access memory)
+  assign dout = mem[imem_addr];
 
   // Initialize instruction memory (do not touch except path)
   always @(posedge clk) begin
