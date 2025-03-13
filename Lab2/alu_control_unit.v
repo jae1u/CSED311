@@ -14,6 +14,7 @@ module alu_control_unit (
             `ARITHMETIC: begin
                 case (func3)
                     `FUNCT3_ADD: alu_op = ((func7 == `FUNCT7_OTHERS) ? `FUNC_ADD : `FUNC_SUB);
+                    `FUNCT3_SLL: alu_op = `FUNC_LLS;
                     `FUNCT3_XOR: alu_op = `FUNC_XOR;
                     `FUNCT3_OR: alu_op = `FUNC_OR;
                     `FUNCT3_AND: alu_op = `FUNC_AND;
