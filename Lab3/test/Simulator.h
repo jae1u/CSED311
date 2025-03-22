@@ -25,7 +25,7 @@ public:
     typedef TestCaseResult (*t_testfn)(M& m, Simulator& s);
     typedef void (*t_hookfn)(M& m, Simulator& s);
 public:
-    Simulator(std::string name) : mod_name(name), testcases(), ctx(), m(&ctx), trace() {}
+    Simulator(std::string name) : mod_name(name), testcases(), ctx(), m(&ctx), trace(), oss() {}
     int main();
     void init();
     void run();
@@ -53,6 +53,7 @@ public:
     VerilatedContext ctx;
     M m;
     VerilatedVcdC trace;
+    std::ostringstream oss;
 };
 
 template <class M>
@@ -74,10 +75,7 @@ void Simulator<M>::init() {
 
     trace.open((std::string("logs/") + mod_name + ".vcd").c_str());
 
-    std::cout 
-        << "\033[1;34m" << "MODULE  " << "\033[0m" 
-        << mod_name << " "
-        << std::string(90 - 9 - mod_name.size(), '=') << "\n";
+    std::cout << mod_name << " ";
 }
 
 template <class M>
@@ -88,10 +86,12 @@ void Simulator<M>::run() {
         step(2); // to record last state
         if (result.pass) {
             ++n_success;
+            std::cout << "\033[32m.\033[0m";
         } else {
             fail(std::string("CASE: ") + casename);
             fail(result.msg, 4);
             ++n_fail;
+            std::cout << "\033[31m!\033[0m";
         }
         if (teardownfn != nullptr) teardownfn(m, *this);
     }
@@ -127,12 +127,12 @@ TestCaseResult Simulator<M>::check(int expected, int actual, std::string msg) {
 
 template<class M>
 void Simulator<M>::success(std::string msg, unsigned indent) {
-    std::cout << success_msg(msg, indent);
+    oss << success_msg(msg, indent);
 }
 
 template<class M>
 void Simulator<M>::fail(std::string msg, unsigned indent) {
-    std::cout << fail_msg(msg, indent);
+    oss << fail_msg(msg, indent);
 }
 
 template <class M>
@@ -160,18 +160,7 @@ std::string Simulator<M>::fail_msg(std::string msg, unsigned indent) {
 
 template <class M>
 void Simulator<M>::report() {
-    if (n_fail == 0) {
-        std::cout 
-            << "ALL PASS "
-            << "(" << n_success << "/" << n_success << ")\n";
-    } else {
-        std::cout 
-            << "FAIL "
-            << "(failed: " << n_fail
-            << ", passed: " << n_success
-            << ", total: " << n_fail + n_success << ")"
-            << "\n";   
-    }
+    std::cout << "\n" << oss.str();
 }
 
 template <class M>
