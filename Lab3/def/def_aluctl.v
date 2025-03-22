@@ -1,0 +1,14 @@
+`define ALUCTL_AND                     4'b0000
+`define ALUCTL_OR                      4'b0001
+`define ALUCTL_XOR                     4'b0010
+`define ALUCTL_ADD                     4'b0011
+`define ALUCTL_SUB                     4'b0100
+`define ALUCTL_SHIFT_LEFT              4'b0101
+`define ALUCTL_SHIFT_RIGHT_LOGICAL     4'b0110
+`define ALUCTL_SHIFT_RIGHT_ARITHMETIC  4'b0111
+`define ALUCTL_LESS_THAN               4'b1000
+`define ALUCTL_GREATER_EQUAL           4'b1001
+`define ALUCTL_LESS_THAN_U             4'b1010
+`define ALUCTL_GREATER_EQUAL_U         4'b1011
+`define ALUCTL_EQUAL                   4'b1100
+`define ALUCTL_NOT_EQUAL               4'b1101
