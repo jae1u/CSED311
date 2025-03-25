@@ -6,7 +6,7 @@
 #include "Vcpu_memory.h"
 #include "helpers.h"
 
-constexpr int MAX_TICK = 1000;
+constexpr int MAX_TICK = 5000;
 
 
 SIM_SEQ(cpu, {    
@@ -591,9 +591,9 @@ SIM_SEQ(cpu, {
         }
     })
 
-    SIM_SEQ_CASE("basic_mem", {
+    SIM_SEQ_CASE("basic", {
         m.reset = 1;
-        load_instr_to_memory<Vcpu_memory>(m.cpu->memory_mod, "test/test_programs/basic_mem.txt");
+        load_instr_to_memory<Vcpu_memory>(m.cpu->memory_mod, "test/test_programs/basic.txt");
         s.tick();
         m.reset = 0;
 
@@ -604,15 +604,15 @@ SIM_SEQ(cpu, {
         }
         SIM_CHECK(m.is_halted, 1, "is_halted");
 
-        auto expected_reg_data = load_hex_dump("test/test_programs/basic_mem.reg_state");
+        auto expected_reg_data = load_hex_dump("test/test_programs/basic.reg_state");
         for (int i = 1; i < 32; ++i) {
             SIM_CHECK(m.reg_data[i], expected_reg_data[i], std::string("x") + std::to_string(i));
         }
     })
 
-    SIM_SEQ_CASE("loop_mem", {
+    SIM_SEQ_CASE("loop", {
         m.reset = 1;
-        load_instr_to_memory<Vcpu_memory>(m.cpu->memory_mod, "test/test_programs/loop_mem.txt");
+        load_instr_to_memory<Vcpu_memory>(m.cpu->memory_mod, "test/test_programs/loop.txt");
         s.tick();
         m.reset = 0;
 
@@ -623,7 +623,45 @@ SIM_SEQ(cpu, {
         }
         SIM_CHECK(m.is_halted, 1, "is_halted");
 
-        auto expected_reg_data = load_hex_dump("test/test_programs/loop_mem.reg_state");
+        auto expected_reg_data = load_hex_dump("test/test_programs/loop.reg_state");
+        for (int i = 1; i < 32; ++i) {
+            SIM_CHECK(m.reg_data[i], expected_reg_data[i], std::string("x") + std::to_string(i));
+        }
+    })
+
+    SIM_SEQ_CASE("ifelse", {
+        m.reset = 1;
+        load_instr_to_memory<Vcpu_memory>(m.cpu->memory_mod, "test/test_programs/ifelse.txt");
+        s.tick();
+        m.reset = 0;
+
+        int i = 0;
+        while (i < MAX_TICK && !m.is_halted) {
+            s.tick();
+            ++i;
+        }
+        SIM_CHECK(m.is_halted, 1, "is_halted");
+
+        auto expected_reg_data = load_hex_dump("test/test_programs/ifelse.reg_state");
+        for (int i = 1; i < 32; ++i) {
+            SIM_CHECK(m.reg_data[i], expected_reg_data[i], std::string("x") + std::to_string(i));
+        }
+    })
+
+    SIM_SEQ_CASE("recursive", {
+        m.reset = 1;
+        load_instr_to_memory<Vcpu_memory>(m.cpu->memory_mod, "test/test_programs/recursive.txt");
+        s.tick();
+        m.reset = 0;
+
+        int i = 0;
+        while (i < MAX_TICK && !m.is_halted) {
+            s.tick();
+            ++i;
+        }
+        SIM_CHECK(m.is_halted, 1, "is_halted");
+
+        auto expected_reg_data = load_hex_dump("test/test_programs/recursive.reg_state");
         for (int i = 1; i < 32; ++i) {
             SIM_CHECK(m.reg_data[i], expected_reg_data[i], std::string("x") + std::to_string(i));
         }

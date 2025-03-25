@@ -4,7 +4,7 @@ module cpu (
     input reset,
     input clk,
     output is_halted,
-    output reg [31:0] reg_data [31:0]
+    output reg [31:0] reg_data [0:31]
 );
     // control signals
     wire pc_write;

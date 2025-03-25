@@ -12,9 +12,9 @@ module register_file (
     output reg [31:0] read_data_1,
     output reg [31:0] read_data_2,
     output reg [31:0] x17,
-    output reg [31:0] _data [31:0]
+    output reg [31:0] _data [0:31]
 );
-    reg [31:0] r [31:0] /* verilator public */;
+    reg [31:0] r [0:31] /* verilator public */;
     
     always @(*) begin
         if (read_reg_1 == 5'b0) read_data_1 = 0;
@@ -29,7 +29,7 @@ module register_file (
     
     always @(posedge clk) begin
         if (reset && !_testing_manual_reset) begin
-            for (integer i = 0; i < 31; i = i + 1)
+            for (integer i = 0; i < 32; i = i + 1)
                 r[i] <= 0;
             r[2] <= 32'h2ffc;
         end
