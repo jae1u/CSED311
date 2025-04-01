@@ -6,6 +6,14 @@ module cpu (
     output is_halted,
     output reg [31:0] reg_data [0:31]
 );
+    /***** Register declarations *****/
+    reg [31:0] IR; // instruction register
+    reg [31:0] MDR; // memory data register
+    reg [31:0] A; // Read 1 data register
+    reg [31:0] B; // Read 2 data register
+    reg [31:0] ALUOut; // ALU output register
+    // Do not modify and use registers declared above.
+
     // control signals
     wire pc_write;
     wire pc_write_not_cond;
@@ -72,22 +80,6 @@ module cpu (
         .mem_data(mem_read_data)
     );
 
-    d_reg ir(
-        .reset(reset),
-        .data(mem_read_data),
-        .write(ir_write),
-        .clk(clk),
-        .out(ir_val)
-    );
-
-    d_reg mdr(
-        .reset(reset),
-        .data(mem_read_data),
-        .write(1),
-        .clk(clk),
-        .out(mdr_val)
-    );
-
     mux #(.K(32)) rf_write_data_mux(
         .ins({mdr_val, alu_out_val}),
         .select(mem_to_reg),
@@ -107,22 +99,6 @@ module cpu (
         .read_data_2(rf_read_data_2),
         .x17(x17_val),
         ._data(reg_data)
-    );
-    
-    d_reg read_data_a(
-        .reset(reset),
-        .data(rf_read_data_1),
-        .write(1),
-        .clk(clk),
-        .out(read_data_a_val)
-    );
-
-    d_reg read_data_b(
-        .reset(reset),
-        .data(rf_read_data_2),
-        .write(1),
-        .clk(clk),
-        .out(read_data_b_val)
     );
 
     imm_gen imm_gen_mod(
@@ -155,14 +131,6 @@ module cpu (
         .result(alu_result)
     );
 
-    d_reg alu_out(
-        .reset(reset),
-        .data(alu_result),
-        .write(alu_out_write),
-        .clk(clk),
-        .out(alu_out_val)
-    );
-
     mux #(.K(32)) next_pc_mux(
         .ins({alu_out_val, alu_result}),
         .select(pc_src),
@@ -188,4 +156,27 @@ module cpu (
         .pc_src(pc_src),
         .alu_out_write(alu_out_write)
     );
+
+    assign ir_val = IR;
+    assign mdr_val = MDR;
+    assign read_data_a_val = A;
+    assign read_data_b_val = B;
+    assign alu_out_val = ALUOut;
+
+    always @(posedge clk) begin
+        if (reset) begin
+            IR <= 0;
+            MDR <= 0;
+            A <= 0;
+            B <= 0;
+            ALUOut <= 0;
+        end
+        else begin
+            if (ir_write) IR <= mem_read_data;
+            MDR <= mem_read_data;
+            A <= rf_read_data_1;
+            B <= rf_read_data_2;
+            if (alu_out_write) ALUOut <= alu_result;
+        end
+    end
 endmodule
