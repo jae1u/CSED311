@@ -13,3 +13,5 @@ docker run -itd -v $(pwd):/work --name $docker_name --hostname $hostname -p $por
 docker exec -it $docker_name useradd --create-home --uid $(id -u) --shell /bin/bash --groups sudo $username
 docker exec -it $docker_name /bin/bash -c "echo '$username:$password' | chpasswd"
 docker exec -it $docker_name service ssh start
+
+scp -r -P 1557 ~/.ssh csed311@localhost:/home/csed311
