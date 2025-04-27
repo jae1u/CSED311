@@ -24,7 +24,7 @@ module cpu(input reset,                     // positive reset signal
   wire mem_write;
   wire alu_src;
   wire write_enable;
-  wire pc_to_reg;
+  // wire pc_to_reg;       (TODO)
   wire is_ecall;
   wire [31:0] dout;
   wire [31:0] imm_gen_out;
@@ -69,7 +69,7 @@ module cpu(input reset,                     // positive reset signal
   // From the control unit
   reg EX_MEM_mem_write;     // will be used in MEM stage
   reg EX_MEM_mem_read;      // will be used in MEM stage
-  reg EX_MEM_is_branch;     // will be used in MEM stage
+  // reg EX_MEM_is_branch;  // will be used in MEM stage
   reg EX_MEM_mem_to_reg;    // will be used in WB stage
   reg EX_MEM_reg_write;     // will be used in WB stage
   // From others
@@ -117,7 +117,7 @@ module cpu(input reset,                     // positive reset signal
     .clk (clk),                                                                        // input
     .rs1 (IF_ID_inst[19:15]),                                                          // input
     .rs2 (IF_ID_inst[24:20]),                                                          // input
-    .rd (IF_ID_inst[11:7]),                                                            // input
+    .rd (EX_MEM_rd),                                                                   // input
     // .rd_din (pc_to_reg ? next_pc : (mem_to_reg ? mem_data : alu_result)),           // input (TODO)
     .rd_din (MEM_WB_mem_to_reg ? MEM_WB_mem_to_reg_src_1 : MEM_WB_mem_to_reg_src_2),   // input
     .write_enable (MEM_WB_reg_write),                                                  // input
@@ -134,7 +134,7 @@ module cpu(input reset,                     // positive reset signal
     .mem_write(mem_write),            // output
     .alu_src(alu_src),                // output
     .write_enable(write_enable),      // output
-    .pc_to_reg(pc_to_reg),            // output
+    // .pc_to_reg(pc_to_reg),         // output
     // .alu_op(alu_op),               // output
     .is_ecall(is_ecall)               // output (ecall inst)
   );
@@ -198,11 +198,11 @@ module cpu(input reset,                     // positive reset signal
   always @(posedge clk) begin
     if (reset) begin
       // From the control unit
-      EX_MEM_mem_write <= 0;    // will be used in MEM stage
-      EX_MEM_mem_read <= 0;     // will be used in MEM stage
-      EX_MEM_is_branch <= 0;    // will be used in MEM stage
-      EX_MEM_mem_to_reg <= 0;   // will be used in WB stage
-      EX_MEM_reg_write <= 0;    // will be used in WB stage
+      EX_MEM_mem_write <= 0;      // will be used in MEM stage
+      EX_MEM_mem_read <= 0;       // will be used in MEM stage
+      // EX_MEM_is_branch <= 0;   // will be used in MEM stage
+      EX_MEM_mem_to_reg <= 0;     // will be used in WB stage
+      EX_MEM_reg_write <= 0;      // will be used in WB stage
       // From others
       EX_MEM_alu_out <= 0;
       EX_MEM_dmem_data <= 0;
@@ -212,7 +212,7 @@ module cpu(input reset,                     // positive reset signal
       // From the control unit
       EX_MEM_mem_write <= ID_EX_mem_write;     // will be used in MEM stage
       EX_MEM_mem_read <= ID_EX_mem_read;       // will be used in MEM stage
-      EX_MEM_is_branch <= alu_zero;            // will be used in MEM stage
+      // EX_MEM_is_branch <= alu_zero;         // will be used in MEM stage
       EX_MEM_mem_to_reg <= ID_EX_mem_to_reg;   // will be used in WB stage
       EX_MEM_reg_write <= ID_EX_reg_write;     // will be used in WB stage
       // From others
