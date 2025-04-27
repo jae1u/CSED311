@@ -1,4 +1,4 @@
-module pc(
+module PC(
     input reset,                   // input (Use reset to initialize PC. Initial value must be 0)
     input clk,                     // input
     input [31:0] next_pc,          // input
