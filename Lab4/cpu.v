@@ -39,6 +39,8 @@ module cpu(input reset,                     // positive reset signal
   wire [31:0] MEM_WB_rd_din = MEM_WB_mem_to_reg ? MEM_WB_mem_to_reg_src_1 : MEM_WB_mem_to_reg_src_2;
   wire [4:0] IF_ID_rs1 = is_ecall ? 17 : IF_ID_inst[19:15];
   wire [4:0] IF_ID_rs2 = IF_ID_inst[24:20];
+  wire [1:0] ForwardA;
+  wire [1:0] ForwardB;
 
   /***** Register declarations *****/
   reg [31:0] next_pc;
@@ -47,6 +49,8 @@ module cpu(input reset,                     // positive reset signal
   reg EX_MEM_halt;
   reg MEM_WB_halt;
   reg [4:0] MEM_WB_rd;
+  reg [4:0] ID_EX_rs1;
+  reg [4:0] ID_EX_rs2;
 
   assign is_halted = MEM_WB_halt;
   always @(*) begin
@@ -129,16 +133,16 @@ module cpu(input reset,                     // positive reset signal
 
   // ---------- Register File ----------
   RegisterFile reg_file (
-    .reset (reset),                                                                    // input
-    .clk (clk),                                                                        // input
-    .rs1 (IF_ID_rs1),                                          // input
+    .reset (reset),                                                            // input
+    .clk (clk),                                                                // input
+    .rs1 (IF_ID_rs1),                                                          // input
     .rs2 (IF_ID_rs2),                                                          // input
-    .rd (MEM_WB_rd),                                                                   // input
-    // .rd_din (pc_to_reg ? next_pc : (mem_to_reg ? mem_data : alu_result)),           // input (TODO)
-    .rd_din (MEM_WB_rd_din),   // input
-    .write_enable (MEM_WB_reg_write),                                                  // input
-    .rs1_dout (rs1_dout),                                                              // output
-    .rs2_dout (rs2_dout),                                                              // output
+    .rd (MEM_WB_rd),                                                           // input
+    // .rd_din (pc_to_reg ? next_pc : (mem_to_reg ? mem_data : alu_result)),   // input (TODO)
+    .rd_din (MEM_WB_rd_din),                                                   // input
+    .write_enable (MEM_WB_reg_write),                                          // input
+    .rs1_dout (rs1_dout),                                                      // output
+    .rs2_dout (rs2_dout),                                                      // output
     .print_reg(print_reg)
   );
 
@@ -178,6 +182,8 @@ module cpu(input reset,                     // positive reset signal
       ID_EX_ALU_ctrl_unit_input <= 0;
       ID_EX_rd <= 0;
       ID_EX_halt <= 0;
+      ID_EX_rs1 <= 0;
+      ID_EX_rs2 <= 0;
     end
     else begin
       // From the control unit
@@ -194,6 +200,8 @@ module cpu(input reset,                     // positive reset signal
       ID_EX_ALU_ctrl_unit_input <= {IF_ID_inst[31:25], IF_ID_inst[14:12]};
       ID_EX_rd <= IF_ID_inst[11:7];
       ID_EX_halt <= is_ecall && (rs1_dout == 10);
+      ID_EX_rs1 <= IF_ID_rs1;
+      ID_EX_rs2 <= IF_ID_rs2;
     end
   end
 
@@ -205,11 +213,11 @@ module cpu(input reset,                     // positive reset signal
 
   // ---------- ALU ----------
   ALU alu (
-    .alu_op(alu_op),                                         // input
-    .alu_in_1(ID_EX_rs1_data),                               // input  
-    .alu_in_2(ID_EX_alu_src ? ID_EX_imm : ID_EX_rs2_data),   // input
-    .alu_result(alu_result),                                 // output
-    .alu_zero(alu_zero)                                      // output
+    .alu_op(alu_op),                                                                                                              // input
+    .alu_in_1(ForwardA == 0 ? ID_EX_rs1_data : (ForwardA == 1 ? EX_MEM_alu_out : MEM_WB_rd_din)),                                 // input  
+    .alu_in_2(ID_EX_alu_src ? ID_EX_imm : (ForwardB == 0 ? ID_EX_rs2_data : (ForwardB == 1 ? EX_MEM_alu_out : MEM_WB_rd_din))),   // input
+    .alu_result(alu_result),                                                                                                      // output
+    .alu_zero(alu_zero)                                                                                                           // output
   );
 
   // Update EX/MEM pipeline registers here
@@ -277,13 +285,22 @@ module cpu(input reset,                     // positive reset signal
     end
   end
 
-  HazardDetectionUnit hazard_detection_unit(
-    .rs1_id(is_ecall ? 17 : IF_ID_inst[19:15]),
-    .rs2_id(IF_ID_inst[24:20]),
-    .rd_ex(ID_EX_rd),
+  ForwardingUnit forwarding_unit(
+    .rs1_ex(ID_EX_rs1),
+    .rs2_ex(ID_EX_rs2),
     .rd_mem(EX_MEM_rd),
-    .reg_write_ex(ID_EX_reg_write),
+    .rd_wb(MEM_WB_rd),
     .reg_write_mem(EX_MEM_reg_write),
+    .reg_write_wb(MEM_WB_reg_write),
+    .ForwardA(ForwardA),
+    .ForwardB(ForwardB)
+  );
+
+  HazardDetectionUnit hazard_detection_unit(
+    .rs1_id(IF_ID_rs1),
+    .rs2_id(IF_ID_rs2),
+    .rd_ex(ID_EX_rd),
+    .mem_read_ex(ID_EX_mem_read),
     .is_stall(is_stall)
   );
 
