@@ -14,7 +14,6 @@ module cpu(input reset,                     // positive reset signal
            output [31:0]print_reg[0:31]);   // Whehther to finish simulation
 
   /***** Wire declarations *****/
-  wire [31:0] next_pc;
   wire [31:0] current_pc;
   wire [31:0] instruction;
   wire [31:0] rs1_dout;
@@ -39,10 +38,21 @@ module cpu(input reset,                     // positive reset signal
   // wire branch;          (TODO)
 
   /***** Register declarations *****/
-  // reg [31:0] x17;                                                                 (TODO)
+  reg [31:0] next_pc;
+  reg is_stall;
+  reg ID_EX_halt;
+  reg EX_MEM_halt;
+  reg MEM_WB_halt;
 
-  assign next_pc = current_pc + 4;
-  // assign is_halted = is_ecall && (x17 == 10);                                     (TODO)
+  assign is_halted = MEM_WB_halt;
+  always @(*) begin
+    if (is_stall) begin
+      next_pc = current_pc;
+    end
+    else begin
+      next_pc = current_pc + 4;
+    end
+  end
   // assign target = current_pc + imm_gen_out;                                       (TODO)
   // assign PCSrc1 = is_jal || (branch && alu_bcond);                                (TODO)
   // assign next_pc = is_jalr ? alu_result : (PCSrc1 ? target : (current_pc + 4));   (TODO)
@@ -117,7 +127,7 @@ module cpu(input reset,                     // positive reset signal
   RegisterFile reg_file (
     .reset (reset),                                                                    // input
     .clk (clk),                                                                        // input
-    .rs1 (IF_ID_inst[19:15]),                                                          // input
+    .rs1 (is_ecall ? 17 : IF_ID_inst[19:15]),                                          // input
     .rs2 (IF_ID_inst[24:20]),                                                          // input
     .rd (EX_MEM_rd),                                                                   // input
     // .rd_din (pc_to_reg ? next_pc : (mem_to_reg ? mem_data : alu_result)),           // input (TODO)
@@ -149,7 +159,7 @@ module cpu(input reset,                     // positive reset signal
 
   // Update ID/EX pipeline registers here
   always @(posedge clk) begin
-    if (reset) begin
+    if (reset || is_stall) begin
       // From the control unit
       ID_EX_alu_op <= 0;       // will be used in EX stage
       ID_EX_alu_src <= 0;      // will be used in EX stage
@@ -163,6 +173,7 @@ module cpu(input reset,                     // positive reset signal
       ID_EX_imm <= 0;
       ID_EX_ALU_ctrl_unit_input <= 0;
       ID_EX_rd <= 0;
+      ID_EX_halt <= 0;
     end
     else begin
       // From the control unit
@@ -178,6 +189,7 @@ module cpu(input reset,                     // positive reset signal
       ID_EX_imm <= imm_gen_out;
       ID_EX_ALU_ctrl_unit_input <= {IF_ID_inst[31:25], IF_ID_inst[14:12]};
       ID_EX_rd <= IF_ID_inst[11:7];
+      ID_EX_halt <= is_ecall && (rs1_dout == 10);
     end
   end
 
@@ -209,6 +221,7 @@ module cpu(input reset,                     // positive reset signal
       EX_MEM_alu_out <= 0;
       EX_MEM_dmem_data <= 0;
       EX_MEM_rd <= 0;
+      EX_MEM_halt <= 0;
     end
     else begin
       // From the control unit
@@ -221,6 +234,7 @@ module cpu(input reset,                     // positive reset signal
       EX_MEM_alu_out <= alu_result;
       EX_MEM_dmem_data <= ID_EX_rs2_data;
       EX_MEM_rd <= ID_EX_rd;
+      EX_MEM_halt <= ID_EX_halt;
     end
   end
 
@@ -244,6 +258,7 @@ module cpu(input reset,                     // positive reset signal
       // From others
       MEM_WB_mem_to_reg_src_1 <= 0;
       MEM_WB_mem_to_reg_src_2 <= 0;
+      MEM_WB_halt <= 0;
     end
     else begin
       // From the control unit
@@ -252,7 +267,18 @@ module cpu(input reset,                     // positive reset signal
       // From others
       MEM_WB_mem_to_reg_src_1 <= dout;
       MEM_WB_mem_to_reg_src_2 <= EX_MEM_alu_out;
+      MEM_WB_halt <= EX_MEM_halt;
     end
   end
+
+  HazardDetectionUnit hazard_detection_unit(
+    .rs1_id(is_ecall ? 17 : IF_ID_inst[19:15]),
+    .rs2_id(IF_ID_inst[24:20]),
+    .rd_ex(ID_EX_rd),
+    .rd_mem(EX_MEM_rd),
+    .reg_write_ex(ID_EX_reg_write),
+    .reg_write_mem(EX_MEM_reg_write),
+    .is_stall(is_stall)
+  );
 
 endmodule
