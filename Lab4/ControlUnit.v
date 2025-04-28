@@ -11,6 +11,7 @@ module ControlUnit (
     output alu_src,        // ALUSrc
     output write_enable,   // RegWrite
     // output pc_to_reg,   // (TODO)
+    output [6:0] alu_op,         // ALUOp
     output is_ecall);      // (ecall inst)
 
     // assign is_jal = (part_of_inst == `JAL);                                 (TODO)
@@ -22,5 +23,6 @@ module ControlUnit (
     assign alu_src = (part_of_inst != `ARITHMETIC) && (part_of_inst != `BRANCH);
     assign write_enable = (part_of_inst != `STORE) && (part_of_inst != `BRANCH);
     // assign pc_to_reg = (part_of_inst == `JAL) || (part_of_inst == `JALR);   (TODO)
+    assign alu_op = part_of_inst;
     assign is_ecall = (part_of_inst == `ECALL);
 endmodule

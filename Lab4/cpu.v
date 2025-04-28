@@ -25,11 +25,13 @@ module cpu(input reset,                     // positive reset signal
   wire alu_src;
   wire write_enable;
   // wire pc_to_reg;       (TODO)
+  wire [6:0] ALUOp;
   wire is_ecall;
-  wire [31:0] dout;
   wire [31:0] imm_gen_out;
+  wire [3:0] alu_op;
   wire [31:0] alu_result;
   wire alu_zero;
+  wire [31:0] dout;
   // wire [31:0] target;   (TODO)
   // wire PCSrc1;          (TODO)
   // wire is_jal;          (TODO)
@@ -53,7 +55,7 @@ module cpu(input reset,                     // positive reset signal
   reg [31:0] IF_ID_inst;    // will be used in ID stage
   /***** ID/EX pipeline registers *****/
   // From the control unit
-  reg [3:0] ID_EX_alu_op;   // will be used in EX stage
+  reg [6:0] ID_EX_alu_op;   // will be used in EX stage
   reg ID_EX_alu_src;        // will be used in EX stage
   reg ID_EX_mem_write;      // will be used in MEM stage
   reg ID_EX_mem_read;       // will be used in MEM stage
@@ -63,7 +65,7 @@ module cpu(input reset,                     // positive reset signal
   reg [31:0] ID_EX_rs1_data;
   reg [31:0] ID_EX_rs2_data;
   reg [31:0] ID_EX_imm;
-  reg [16:0]ID_EX_ALU_ctrl_unit_input;
+  reg [9:0] ID_EX_ALU_ctrl_unit_input;
   reg [4:0] ID_EX_rd;
   /***** EX/MEM pipeline registers *****/
   // From the control unit
@@ -135,7 +137,7 @@ module cpu(input reset,                     // positive reset signal
     .alu_src(alu_src),                // output
     .write_enable(write_enable),      // output
     // .pc_to_reg(pc_to_reg),         // output
-    // .alu_op(alu_op),               // output
+    .alu_op(ALUOp),                   // output
     .is_ecall(is_ecall)               // output (ecall inst)
   );
 
@@ -149,7 +151,7 @@ module cpu(input reset,                     // positive reset signal
   always @(posedge clk) begin
     if (reset) begin
       // From the control unit
-      // ID_EX_alu_op <= 0;    // will be used in EX stage
+      ID_EX_alu_op <= 0;       // will be used in EX stage
       ID_EX_alu_src <= 0;      // will be used in EX stage
       ID_EX_mem_write <= 0;    // will be used in MEM stage
       ID_EX_mem_read <= 0;     // will be used in MEM stage
@@ -164,7 +166,7 @@ module cpu(input reset,                     // positive reset signal
     end
     else begin
       // From the control unit
-      // ID_EX_alu_op <= alu_op;         // will be used in EX stage
+      ID_EX_alu_op <= ALUOp;             // will be used in EX stage
       ID_EX_alu_src <= alu_src;          // will be used in EX stage
       ID_EX_mem_write <= mem_write;      // will be used in MEM stage
       ID_EX_mem_read <= mem_read;        // will be used in MEM stage
@@ -174,20 +176,20 @@ module cpu(input reset,                     // positive reset signal
       ID_EX_rs1_data <= rs1_dout;
       ID_EX_rs2_data <= rs2_dout;
       ID_EX_imm <= imm_gen_out;
-      ID_EX_ALU_ctrl_unit_input <= {IF_ID_inst[31:25], IF_ID_inst[14:12], IF_ID_inst[6:0]};
+      ID_EX_ALU_ctrl_unit_input <= {IF_ID_inst[31:25], IF_ID_inst[14:12]};
       ID_EX_rd <= IF_ID_inst[11:7];
     end
   end
 
   // ---------- ALU Control Unit ----------
   ALUControlUnit alu_ctrl_unit (
-    .part_of_inst(ID_EX_ALU_ctrl_unit_input),   // input
-    .alu_op(ID_EX_alu_op)                       // output
+    .part_of_inst({ID_EX_ALU_ctrl_unit_input, ID_EX_alu_op}),   // input
+    .alu_op(alu_op)                                             // output
   );
 
   // ---------- ALU ----------
   ALU alu (
-    .alu_op(ID_EX_alu_op),                                   // input
+    .alu_op(alu_op),                                         // input
     .alu_in_1(ID_EX_rs1_data),                               // input  
     .alu_in_2(ID_EX_alu_src ? ID_EX_imm : ID_EX_rs2_data),   // input
     .alu_result(alu_result),                                 // output
