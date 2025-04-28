@@ -13,14 +13,14 @@ module ControlUnit (
     // output pc_to_reg,   // (TODO)
     output is_ecall);      // (ecall inst)
 
-    assign write_enable = (part_of_inst != `STORE) && (part_of_inst != `BRANCH);
-    assign alu_src = (part_of_inst != `ARITHMETIC) && (part_of_inst != `BRANCH);
-    assign mem_read = (part_of_inst == `LOAD);
-    assign mem_write = (part_of_inst == `STORE);
-    assign mem_to_reg = (part_of_inst == `LOAD);
-    // assign pc_to_reg = (part_of_inst == `JAL) || (part_of_inst == `JALR);   (TODO)
     // assign is_jal = (part_of_inst == `JAL);                                 (TODO)
     // assign is_jalr = (part_of_inst == `JALR);                               (TODO)
     // assign branch = (part_of_inst == `BRANCH);                              (TODO)
+    assign mem_read = (part_of_inst == `LOAD);
+    assign mem_to_reg = (part_of_inst == `LOAD);
+    assign mem_write = (part_of_inst == `STORE);
+    assign alu_src = (part_of_inst != `ARITHMETIC) && (part_of_inst != `BRANCH);
+    assign write_enable = (part_of_inst != `STORE) && (part_of_inst != `BRANCH);
+    // assign pc_to_reg = (part_of_inst == `JAL) || (part_of_inst == `JALR);   (TODO)
     assign is_ecall = (part_of_inst == `ECALL);
 endmodule
