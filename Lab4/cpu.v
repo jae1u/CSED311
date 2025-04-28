@@ -36,6 +36,9 @@ module cpu(input reset,                     // positive reset signal
   // wire is_jal;          (TODO)
   // wire is_jalr;         (TODO)
   // wire branch;          (TODO)
+  wire [31:0] MEM_WB_rd_din = MEM_WB_mem_to_reg ? MEM_WB_mem_to_reg_src_1 : MEM_WB_mem_to_reg_src_2;
+  wire [4:0] IF_ID_rs1 = is_ecall ? 17 : IF_ID_inst[19:15];
+  wire [4:0] IF_ID_rs2 = IF_ID_inst[24:20];
 
   /***** Register declarations *****/
   reg [31:0] next_pc;
@@ -128,11 +131,11 @@ module cpu(input reset,                     // positive reset signal
   RegisterFile reg_file (
     .reset (reset),                                                                    // input
     .clk (clk),                                                                        // input
-    .rs1 (is_ecall ? 17 : IF_ID_inst[19:15]),                                          // input
-    .rs2 (IF_ID_inst[24:20]),                                                          // input
+    .rs1 (IF_ID_rs1),                                          // input
+    .rs2 (IF_ID_rs2),                                                          // input
     .rd (MEM_WB_rd),                                                                   // input
     // .rd_din (pc_to_reg ? next_pc : (mem_to_reg ? mem_data : alu_result)),           // input (TODO)
-    .rd_din (MEM_WB_mem_to_reg ? MEM_WB_mem_to_reg_src_1 : MEM_WB_mem_to_reg_src_2),   // input
+    .rd_din (MEM_WB_rd_din),   // input
     .write_enable (MEM_WB_reg_write),                                                  // input
     .rs1_dout (rs1_dout),                                                              // output
     .rs2_dout (rs2_dout),                                                              // output
