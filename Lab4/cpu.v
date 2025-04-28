@@ -70,15 +70,15 @@ module cpu(input reset,                     // positive reset signal
   // 1. You might need other pipeline registers that are not described below
   // 2. You might not need registers described below
   /***** IF/ID pipeline registers *****/
-  reg [31:0] IF_ID_inst;    // will be used in ID stage
+  reg [31:0] IF_ID_inst;     // will be used in ID stage
   /***** ID/EX pipeline registers *****/
   // From the control unit
-  reg [6:0] ID_EX_alu_op;   // will be used in EX stage
-  reg ID_EX_alu_src;        // will be used in EX stage
-  reg ID_EX_mem_write;      // will be used in MEM stage
-  reg ID_EX_mem_read;       // will be used in MEM stage
-  reg ID_EX_mem_to_reg;     // will be used in WB stage
-  reg ID_EX_reg_write;      // will be used in WB stage
+  reg [6:0] ID_EX_alu_op;    // will be used in EX stage
+  reg ID_EX_alu_src;         // will be used in EX stage
+  reg ID_EX_mem_write;       // will be used in MEM stage
+  reg ID_EX_mem_read;        // will be used in MEM stage
+  reg ID_EX_mem_to_reg;      // will be used in WB stage
+  reg ID_EX_reg_write;       // will be used in WB stage
   // From others
   reg [31:0] ID_EX_rs1_data;
   reg [31:0] ID_EX_rs2_data;
@@ -87,19 +87,19 @@ module cpu(input reset,                     // positive reset signal
   reg [4:0] ID_EX_rd;
   /***** EX/MEM pipeline registers *****/
   // From the control unit
-  reg EX_MEM_mem_write;     // will be used in MEM stage
-  reg EX_MEM_mem_read;      // will be used in MEM stage
-  // reg EX_MEM_is_branch;  // will be used in MEM stage
-  reg EX_MEM_mem_to_reg;    // will be used in WB stage
-  reg EX_MEM_reg_write;     // will be used in WB stage
+  reg EX_MEM_mem_write;      // will be used in MEM stage
+  reg EX_MEM_mem_read;       // will be used in MEM stage
+  // reg EX_MEM_is_branch;   // will be used in MEM stage
+  reg EX_MEM_mem_to_reg;     // will be used in WB stage
+  reg EX_MEM_reg_write;      // will be used in WB stage
   // From others
   reg [31:0] EX_MEM_alu_out;
   reg [31:0] EX_MEM_dmem_data;
   reg [4:0] EX_MEM_rd;
   /***** MEM/WB pipeline registers *****/
   // From the control unit
-  reg MEM_WB_mem_to_reg;    // will be used in WB stage
-  reg MEM_WB_reg_write;     // will be used in WB stage
+  reg MEM_WB_mem_to_reg;     // will be used in WB stage
+  reg MEM_WB_reg_write;      // will be used in WB stage
   // From others
   reg [31:0] MEM_WB_mem_to_reg_src_1;
   reg [31:0] MEM_WB_mem_to_reg_src_2;
@@ -115,10 +115,10 @@ module cpu(input reset,                     // positive reset signal
   
   // ---------- Instruction Memory ----------
   InstMemory imem(
-    .reset(reset),         // input
-    .clk(clk),             // input
-    .addr(current_pc),     // input
-    .dout(instruction)     // output
+    .reset(reset),       // input
+    .clk(clk),           // input
+    .addr(current_pc),   // input
+    .dout(instruction)   // output
   );
 
   // Update IF/ID pipeline registers here
@@ -199,7 +199,7 @@ module cpu(input reset,                     // positive reset signal
       ID_EX_imm <= imm_gen_out;
       ID_EX_ALU_ctrl_unit_input <= {IF_ID_inst[31:25], IF_ID_inst[14:12]};
       ID_EX_rd <= IF_ID_inst[11:7];
-      ID_EX_halt <= is_ecall && (rs1_dout == 10);
+      ID_EX_halt <= is_ecall && (((EX_MEM_rd == 17 && EX_MEM_reg_write) ? EX_MEM_dmem_data : rs1_dout) == 10);
       ID_EX_rs1 <= IF_ID_rs1;
       ID_EX_rs2 <= IF_ID_rs2;
     end
@@ -244,7 +244,7 @@ module cpu(input reset,                     // positive reset signal
       EX_MEM_reg_write <= ID_EX_reg_write;     // will be used in WB stage
       // From others
       EX_MEM_alu_out <= alu_result;
-      EX_MEM_dmem_data <= ID_EX_rs2_data;
+      EX_MEM_dmem_data <= ForwardB == 0 ? ID_EX_rs2_data : (ForwardB == 1 ? EX_MEM_alu_out : MEM_WB_rd_din);
       EX_MEM_rd <= ID_EX_rd;
       EX_MEM_halt <= ID_EX_halt;
     end
@@ -300,7 +300,9 @@ module cpu(input reset,                     // positive reset signal
     .rs1_id(IF_ID_rs1),
     .rs2_id(IF_ID_rs2),
     .rd_ex(ID_EX_rd),
+    .reg_write_ex(ID_EX_reg_write),
     .mem_read_ex(ID_EX_mem_read),
+    .is_ecall(is_ecall),
     .is_stall(is_stall)
   );
 
