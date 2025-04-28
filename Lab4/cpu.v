@@ -43,6 +43,7 @@ module cpu(input reset,                     // positive reset signal
   reg ID_EX_halt;
   reg EX_MEM_halt;
   reg MEM_WB_halt;
+  reg [4:0] MEM_WB_rd;
 
   assign is_halted = MEM_WB_halt;
   always @(*) begin
@@ -118,7 +119,7 @@ module cpu(input reset,                     // positive reset signal
     if (reset) begin
       IF_ID_inst <= 0;
     end
-    else begin
+    else if (!is_stall) begin
       IF_ID_inst <= instruction;   // will be used in ID stage
     end
   end
@@ -129,7 +130,7 @@ module cpu(input reset,                     // positive reset signal
     .clk (clk),                                                                        // input
     .rs1 (is_ecall ? 17 : IF_ID_inst[19:15]),                                          // input
     .rs2 (IF_ID_inst[24:20]),                                                          // input
-    .rd (EX_MEM_rd),                                                                   // input
+    .rd (MEM_WB_rd),                                                                   // input
     // .rd_din (pc_to_reg ? next_pc : (mem_to_reg ? mem_data : alu_result)),           // input (TODO)
     .rd_din (MEM_WB_mem_to_reg ? MEM_WB_mem_to_reg_src_1 : MEM_WB_mem_to_reg_src_2),   // input
     .write_enable (MEM_WB_reg_write),                                                  // input
@@ -259,6 +260,7 @@ module cpu(input reset,                     // positive reset signal
       MEM_WB_mem_to_reg_src_1 <= 0;
       MEM_WB_mem_to_reg_src_2 <= 0;
       MEM_WB_halt <= 0;
+      MEM_WB_rd <= 0;
     end
     else begin
       // From the control unit
@@ -268,6 +270,7 @@ module cpu(input reset,                     // positive reset signal
       MEM_WB_mem_to_reg_src_1 <= dout;
       MEM_WB_mem_to_reg_src_2 <= EX_MEM_alu_out;
       MEM_WB_halt <= EX_MEM_halt;
+      MEM_WB_rd <= EX_MEM_rd;
     end
   end
 
