@@ -1,13 +1,3 @@
-// Submit this file with other files you created.
-// Do not touch port declarations of the module 'CPU'.
-
-// Guidelines
-// 1. It is highly recommened to `define opcodes and something useful.
-// 2. You can modify modules (except InstMemory, DataMemory, and RegisterFile)
-// (e.g., port declarations, remove modules, define new modules, ...)
-// 3. You might need to describe combinational logics to drive them into the module (e.g., mux, and, or, ...)
-// 4. `include files if required
-
 module cpu(input reset,                     // positive reset signal
            input clk,                       // clock signal
            output is_halted,                // Whehther to finish simulation
@@ -65,10 +55,6 @@ module cpu(input reset,                     // positive reset signal
   // assign PCSrc1 = is_jal || (branch && alu_bcond);                                (TODO)
   // assign next_pc = is_jalr ? alu_result : (PCSrc1 ? target : (current_pc + 4));   (TODO)
 
-  // You need to modify the width of registers
-  // In addition, 
-  // 1. You might need other pipeline registers that are not described below
-  // 2. You might not need registers described below
   /***** IF/ID pipeline registers *****/
   reg [31:0] IF_ID_inst;     // will be used in ID stage
   /***** ID/EX pipeline registers *****/
