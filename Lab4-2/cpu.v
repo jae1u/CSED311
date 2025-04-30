@@ -19,7 +19,7 @@ module cpu(input reset,                     // positive reset signal
   wire [31:0] imm_gen_out;   // From the immediate generator
   wire [3:0] alu_op;         // From the ALU control unit
   wire [31:0] alu_result;    // From the ALU
-  wire alu_zero;             // From the ALU
+  wire alu_bcond;            // From the ALU
   wire [31:0] dout;          // From the data memory
   wire [1:0] ForwardA;       // From the hazard detection unit
   wire [1:0] ForwardB;       // From the hazard detection unit
@@ -203,7 +203,7 @@ module cpu(input reset,                     // positive reset signal
     .alu_in_1(ForwardA == 0 ? ID_EX_rs1_data : (ForwardA == 1 ? EX_MEM_alu_out : MEM_WB_rd_din)),                                 // input  
     .alu_in_2(ID_EX_alu_src ? ID_EX_imm : (ForwardB == 0 ? ID_EX_rs2_data : (ForwardB == 1 ? EX_MEM_alu_out : MEM_WB_rd_din))),   // input
     .alu_result(alu_result),                                                                                                      // output
-    .alu_zero(alu_zero)                                                                                                           // output
+    .alu_bcond(alu_bcond)                                                                                                         // output
   );
 
   // Update EX/MEM pipeline registers here
@@ -225,7 +225,7 @@ module cpu(input reset,                     // positive reset signal
       // From the control unit
       EX_MEM_mem_write <= ID_EX_mem_write;     // will be used in MEM stage
       EX_MEM_mem_read <= ID_EX_mem_read;       // will be used in MEM stage
-      // EX_MEM_is_branch <= alu_zero;         // will be used in MEM stage
+      // EX_MEM_is_branch <= alu_bcond;        // will be used in MEM stage
       EX_MEM_mem_to_reg <= ID_EX_mem_to_reg;   // will be used in WB stage
       EX_MEM_reg_write <= ID_EX_reg_write;     // will be used in WB stage
       // From others
