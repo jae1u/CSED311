@@ -4,43 +4,37 @@ module cpu(input reset,                     // positive reset signal
            output [31:0]print_reg[0:31]);   // Whehther to finish simulation
 
   /***** Wire declarations *****/
-  wire [31:0] current_pc;
-  wire [31:0] instruction;
-  wire [31:0] rs1_dout;
-  wire [31:0] rs2_dout;
-  wire mem_read;
-  wire mem_to_reg;
-  wire mem_write;
-  wire alu_src;
-  wire write_enable;
-  // wire pc_to_reg;       (TODO)
-  wire [6:0] ALUOp;
-  wire is_ecall;
-  wire [31:0] imm_gen_out;
-  wire [3:0] alu_op;
-  wire [31:0] alu_result;
-  wire alu_zero;
-  wire [31:0] dout;
+  wire [31:0] current_pc;    // From the program counter
+  wire [31:0] instruction;   // From the instruction memory
+  wire [31:0] rs1_dout;      // From the register file
+  wire [31:0] rs2_dout;      // From the register file
+  wire mem_read;             // From the control unit
+  wire mem_to_reg;           // From the control unit
+  wire mem_write;            // From the control unit
+  wire alu_src;              // From the control unit
+  wire write_enable;         // From the control unit
+  wire pc_to_reg;            // From the control unit
+  wire [6:0] ALUOp;          // From the control unit
+  wire is_ecall;             // From the control unit
+  wire [31:0] imm_gen_out;   // From the immediate generator
+  wire [3:0] alu_op;         // From the ALU control unit
+  wire [31:0] alu_result;    // From the ALU
+  wire alu_zero;             // From the ALU
+  wire [31:0] dout;          // From the data memory
+  wire [1:0] ForwardA;       // From the hazard detection unit
+  wire [1:0] ForwardB;       // From the hazard detection unit
   // wire [31:0] target;   (TODO)
   // wire PCSrc1;          (TODO)
   // wire is_jal;          (TODO)
   // wire is_jalr;         (TODO)
   // wire branch;          (TODO)
-  wire [31:0] MEM_WB_rd_din = MEM_WB_mem_to_reg ? MEM_WB_mem_to_reg_src_1 : MEM_WB_mem_to_reg_src_2;
   wire [4:0] IF_ID_rs1 = is_ecall ? 17 : IF_ID_inst[19:15];
   wire [4:0] IF_ID_rs2 = IF_ID_inst[24:20];
-  wire [1:0] ForwardA;
-  wire [1:0] ForwardB;
+  wire [31:0] MEM_WB_rd_din = MEM_WB_mem_to_reg ? MEM_WB_mem_to_reg_src_1 : MEM_WB_mem_to_reg_src_2;
 
   /***** Register declarations *****/
   reg [31:0] next_pc;
   reg is_stall;
-  reg ID_EX_halt;
-  reg EX_MEM_halt;
-  reg MEM_WB_halt;
-  reg [4:0] MEM_WB_rd;
-  reg [4:0] ID_EX_rs1;
-  reg [4:0] ID_EX_rs2;
 
   assign is_halted = MEM_WB_halt;
   always @(*) begin
@@ -66,11 +60,14 @@ module cpu(input reset,                     // positive reset signal
   reg ID_EX_mem_to_reg;      // will be used in WB stage
   reg ID_EX_reg_write;       // will be used in WB stage
   // From others
+  reg [4:0] ID_EX_rs1;
+  reg [4:0] ID_EX_rs2;
+  reg [4:0] ID_EX_rd;
   reg [31:0] ID_EX_rs1_data;
   reg [31:0] ID_EX_rs2_data;
   reg [31:0] ID_EX_imm;
   reg [9:0] ID_EX_ALU_ctrl_unit_input;
-  reg [4:0] ID_EX_rd;
+  reg ID_EX_halt;
   /***** EX/MEM pipeline registers *****/
   // From the control unit
   reg EX_MEM_mem_write;      // will be used in MEM stage
@@ -82,6 +79,7 @@ module cpu(input reset,                     // positive reset signal
   reg [31:0] EX_MEM_alu_out;
   reg [31:0] EX_MEM_dmem_data;
   reg [4:0] EX_MEM_rd;
+  reg EX_MEM_halt;
   /***** MEM/WB pipeline registers *****/
   // From the control unit
   reg MEM_WB_mem_to_reg;     // will be used in WB stage
@@ -89,6 +87,8 @@ module cpu(input reset,                     // positive reset signal
   // From others
   reg [31:0] MEM_WB_mem_to_reg_src_1;
   reg [31:0] MEM_WB_mem_to_reg_src_2;
+  reg [4:0] MEM_WB_rd;
+  reg MEM_WB_halt;
 
   // ---------- Update program counter ----------
   // PC must be updated on the rising edge (positive edge) of the clock.
