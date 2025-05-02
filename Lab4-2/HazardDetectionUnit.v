@@ -5,7 +5,7 @@ module HazardDetectionUnit(
     input reg_write_ex,
     input mem_read_ex,
     input is_ecall,
-    output reg is_stall);
+    output is_stall);
 
     // TODO: Maybe we neet to check if instruction is really use rs1 or rs2
     wire use_rs1 = (rs1_id != 0);
