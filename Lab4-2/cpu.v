@@ -70,6 +70,7 @@ module cpu(input reset,                     // positive reset signal
   reg [31:0] ID_EX_imm;
   reg [9:0] ID_EX_ALU_ctrl_unit_input;
   reg ID_EX_halt;
+  reg [31:0] ID_EX_inst;
   /***** EX/MEM pipeline registers *****/
   // From the control unit
   reg EX_MEM_mem_write;      // will be used in MEM stage
@@ -182,6 +183,7 @@ module cpu(input reset,                     // positive reset signal
       ID_EX_halt <= 0;
       ID_EX_rs1 <= 0;
       ID_EX_rs2 <= 0;
+      ID_EX_inst <= 0;
     end
     else begin
       // From the control unit
@@ -205,6 +207,7 @@ module cpu(input reset,                     // positive reset signal
       ID_EX_halt <= ID_is_ecall && (((EX_MEM_rd == 17 && EX_MEM_reg_write) ? EX_MEM_alu_out : ID_rs1_dout) == 10);
       ID_EX_rs1 <= IF_ID_rs1;
       ID_EX_rs2 <= IF_ID_rs2;
+      ID_EX_inst <= IF_ID_inst;
     end
   end
 
@@ -223,8 +226,7 @@ module cpu(input reset,                     // positive reset signal
     .alu_bcond(EX_alu_bcond)                                                                                                      // output
   );
   wire [31:0] EX_next_pc = ID_EX_is_jalr ? EX_alu_result : ((ID_EX_is_jal || EX_alu_bcond) ? (ID_EX_pc + ID_EX_imm) : ID_EX_pc + 4);
-  wire is_flush = (ID_EX_pc != 0) && (EX_next_pc != IF_ID_pc);
-  // We assume that the branch prediction doesn't fail on pc=0.
+  wire is_flush = (ID_EX_inst != 0) && (EX_next_pc != IF_ID_pc);
 
   // Update EX/MEM pipeline registers here
   always @(posedge clk) begin
