@@ -26,7 +26,7 @@ module cpu(input reset,                     // positive reset signal
   wire [31:0] MEM_dout;         // From the data memory
   wire [1:0] ForwardA;          // From the hazard detection unit
   wire [1:0] ForwardB;          // From the hazard detection unit
-  wire [31:0] predicted_pc = IF_pc + 4;
+  wire [31:0] predicted_pc;
 
   /***** Register declarations *****/
   reg [31:0] next_pc;
@@ -310,6 +310,11 @@ module cpu(input reset,                     // positive reset signal
     .mem_read_mem(EX_MEM_mem_read),
     .is_ecall(ID_is_ecall),
     .is_stall(is_stall)
+  );
+
+  Gshare gshare(
+    .IF_pc(IF_pc),
+    .predicted_pc(predicted_pc)
   );
 
 endmodule
