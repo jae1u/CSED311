@@ -26,7 +26,6 @@ module cpu(input reset,                     // positive reset signal
   wire [31:0] MEM_dout;         // From the data memory
   wire [1:0] ForwardA;          // From the hazard detection unit
   wire [1:0] ForwardB;          // From the hazard detection unit
-  wire is_flush = EX_PCSrc && (EX_branched_pc != IF_ID_pc);
   wire [31:0] predicted_pc = IF_pc + 4;
 
   /***** Register declarations *****/
@@ -35,14 +34,17 @@ module cpu(input reset,                     // positive reset signal
 
   assign is_halted = MEM_WB_halt;
   always @(*) begin
-    if (is_stall) begin
+    if (is_flush) begin
+      next_pc = EX_next_pc;
+    end
+    else if (is_stall) begin
       next_pc = IF_pc;
     end
     else begin
-      next_pc = EX_PCSrc ? EX_branched_pc : predicted_pc;
+      next_pc = predicted_pc;
     end
   end
-
+  
   /***** IF/ID pipeline registers *****/
   reg [31:0] IF_ID_pc;       // will be used in ID stage
   reg [31:0] IF_ID_inst;     // will be used in ID stage
@@ -220,8 +222,9 @@ module cpu(input reset,                     // positive reset signal
     .alu_result(EX_alu_result),                                                                                                   // output
     .alu_bcond(EX_alu_bcond)                                                                                                      // output
   );
-  wire EX_PCSrc = ID_EX_is_jal || ID_EX_is_jalr || (ID_EX_branch && EX_alu_bcond);
-  wire [31:0] EX_branched_pc = ID_EX_is_jalr ? EX_alu_result : (ID_EX_pc + ID_EX_imm);
+  wire [31:0] EX_next_pc = ID_EX_is_jalr ? EX_alu_result : ((ID_EX_is_jal || EX_alu_bcond) ? (ID_EX_pc + ID_EX_imm) : ID_EX_pc + 4);
+  wire is_flush = (ID_EX_pc != 0) && (EX_next_pc != IF_ID_pc);
+  // We assume that the branch prediction doesn't fail on pc=0.
 
   // Update EX/MEM pipeline registers here
   always @(posedge clk) begin
