@@ -302,8 +302,10 @@ module cpu(input reset,                     // positive reset signal
     .rs1_id(IF_ID_rs1),
     .rs2_id(IF_ID_rs2),
     .rd_ex(ID_EX_rd),
+    .rd_mem(EX_MEM_rd),
     .reg_write_ex(ID_EX_reg_write),
     .mem_read_ex(ID_EX_mem_read),
+    .mem_read_mem(EX_MEM_mem_read),
     .is_ecall(ID_is_ecall),
     .is_stall(is_stall)
   );
