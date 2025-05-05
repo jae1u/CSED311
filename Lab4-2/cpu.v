@@ -22,7 +22,6 @@ module cpu(input reset,                     // positive reset signal
   wire [31:0] ID_imm_gen_out;   // From the immediate generator
   wire [3:0] EX_alu_op;         // From the ALU control unit
   wire [31:0] EX_alu_result;    // From the ALU
-  wire EX_alu_bcond;            // From the ALU
   wire [31:0] MEM_dout;         // From the data memory
   wire [1:0] ForwardA;          // From the hazard detection unit
   wire [1:0] ForwardB;          // From the hazard detection unit
@@ -34,8 +33,11 @@ module cpu(input reset,                     // positive reset signal
 
   assign is_halted = MEM_WB_halt;
   always @(*) begin
-    if (is_flush) begin
+    if (EX_jalr_flush) begin
       next_pc = EX_next_pc;
+    end
+    else if (ID_jal_branch_flush) begin
+      next_pc = ID_next_pc;
     end
     else if (is_stall) begin
       next_pc = IF_pc;
@@ -111,7 +113,7 @@ module cpu(input reset,                     // positive reset signal
 
   // Update IF/ID pipeline registers here
   always @(posedge clk) begin
-    if (reset || is_flush) begin
+    if (reset || ID_jal_branch_flush || EX_jalr_flush) begin
       IF_ID_inst <= 0;
       IF_ID_pc <= 0;
     end
@@ -158,10 +160,29 @@ module cpu(input reset,                     // positive reset signal
     .part_of_inst(IF_ID_inst),     // input
     .imm_gen_out(ID_imm_gen_out)   // output
   );
+  wire [31:0] ID_rs1_data_forwarded = (IF_ID_rs1 == EX_MEM_rd && EX_MEM_reg_write) ? EX_MEM_alu_out : (IF_ID_rs1 == MEM_WB_rd && MEM_WB_reg_write) ? MEM_WB_rd_din : ID_rs1_dout;
+  wire [31:0] ID_rs2_data_forwarded = (IF_ID_rs2 == EX_MEM_rd && EX_MEM_reg_write) ? EX_MEM_alu_out : (IF_ID_rs2 == MEM_WB_rd && MEM_WB_reg_write) ? MEM_WB_rd_din : ID_rs2_dout;
+  reg ID_bcond;
+  always @(*) begin
+    if (ID_branch) begin
+      case (IF_ID_inst[14:12])
+        3'b000: ID_bcond = (ID_rs1_data_forwarded == ID_rs2_data_forwarded);
+        3'b001: ID_bcond = (ID_rs1_data_forwarded != ID_rs2_data_forwarded);
+        3'b100: ID_bcond = ($signed(ID_rs1_data_forwarded) < $signed(ID_rs2_data_forwarded));
+        3'b101: ID_bcond = ($signed(ID_rs1_data_forwarded) >= $signed(ID_rs2_data_forwarded));
+        default: ID_bcond = 0;
+      endcase
+    end
+    else begin
+      ID_bcond = 0;
+    end
+  end
+  wire [31:0] ID_next_pc = (ID_is_jal || ID_bcond) ? (IF_ID_pc + ID_imm_gen_out) : IF_ID_pc + 4;
+  wire ID_jal_branch_flush = (IF_ID_inst != 0) && (ID_next_pc != IF_pc) && !is_stall;
 
   // Update ID/EX pipeline registers here
   always @(posedge clk) begin
-    if (reset || is_stall || is_flush) begin
+    if (reset || is_stall || EX_jalr_flush) begin
       // From the control unit
       ID_EX_alu_op <= 0;       // will be used in EX stage
       ID_EX_alu_src <= 0;      // will be used in EX stage
@@ -204,7 +225,7 @@ module cpu(input reset,                     // positive reset signal
       ID_EX_imm <= ID_imm_gen_out;
       ID_EX_ALU_ctrl_unit_input <= {IF_ID_inst[31:25], IF_ID_inst[14:12]};
       ID_EX_rd <= IF_ID_inst[11:7];
-      ID_EX_halt <= ID_is_ecall && (((EX_MEM_rd == 17 && EX_MEM_reg_write) ? EX_MEM_alu_out : ID_rs1_dout) == 10);
+      ID_EX_halt <= ID_is_ecall && (ID_rs1_data_forwarded == 10);
       ID_EX_rs1 <= IF_ID_rs1;
       ID_EX_rs2 <= IF_ID_rs2;
       ID_EX_inst <= IF_ID_inst;
@@ -222,11 +243,10 @@ module cpu(input reset,                     // positive reset signal
     .alu_op(EX_alu_op),                                                                                                           // input
     .alu_in_1(ForwardA == 0 ? ID_EX_rs1_data : (ForwardA == 1 ? EX_MEM_alu_out : MEM_WB_rd_din)),                                 // input  
     .alu_in_2(ID_EX_alu_src ? ID_EX_imm : (ForwardB == 0 ? ID_EX_rs2_data : (ForwardB == 1 ? EX_MEM_alu_out : MEM_WB_rd_din))),   // input
-    .alu_result(EX_alu_result),                                                                                                   // output
-    .alu_bcond(EX_alu_bcond)                                                                                                      // output
+    .alu_result(EX_alu_result)                                                                                                    // output
   );
-  wire [31:0] EX_next_pc = ID_EX_is_jalr ? EX_alu_result : ((ID_EX_is_jal || EX_alu_bcond) ? (ID_EX_pc + ID_EX_imm) : ID_EX_pc + 4);
-  wire is_flush = (ID_EX_inst != 0) && (EX_next_pc != IF_ID_pc);
+  wire [31:0] EX_next_pc = ID_EX_is_jalr ? EX_alu_result : ID_EX_pc + 4;
+  wire EX_jalr_flush = (ID_EX_inst != 0) && (EX_next_pc != IF_ID_pc) && !(ID_EX_is_jal || ID_EX_branch);
 
   // Update EX/MEM pipeline registers here
   always @(posedge clk) begin
@@ -311,6 +331,7 @@ module cpu(input reset,                     // positive reset signal
     .mem_read_ex(ID_EX_mem_read),
     .mem_read_mem(EX_MEM_mem_read),
     .is_ecall(ID_is_ecall),
+    .is_branch(ID_branch),
     .is_stall(is_stall)
   );
 

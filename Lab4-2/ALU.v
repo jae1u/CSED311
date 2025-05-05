@@ -4,8 +4,9 @@ module ALU (
     input [3:0] alu_op,
     input signed [31:0] alu_in_1,
     input signed [31:0] alu_in_2,
-    output reg [31:0] alu_result,
-    output reg alu_bcond);
+    output reg [31:0] alu_result);
+
+    reg alu_bcond; // DEPRECATED: ALU branch condition output
 
     always @(*) begin
         case(alu_op)
