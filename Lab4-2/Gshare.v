@@ -1,6 +1,7 @@
 module Gshare(
     input clk,
     input reset,
+    input is_stall,
     input [31:0] IF_pc,
     input ID_branch,
     input ID_bcond,
@@ -44,7 +45,7 @@ module Gshare(
             BHSR <= 0;
         end
         else begin
-            if (ID_branch) begin
+            if (ID_branch && !is_stall) begin
                 BHSR <= {ID_bcond, BHSR[5:1]};
                 if (ID_bcond) begin
                     TagTable[update_BTB_idx] <= update_Tag;

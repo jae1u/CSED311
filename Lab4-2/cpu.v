@@ -338,6 +338,7 @@ module cpu(input reset,                     // positive reset signal
   Gshare gshare(
     .clk (clk),
     .reset (reset),
+    .is_stall (is_stall),
     .IF_pc (IF_pc),
     .ID_branch (ID_branch),
     .ID_bcond (ID_bcond),
