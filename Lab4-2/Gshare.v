@@ -50,14 +50,22 @@ module Gshare(
                     TagTable[update_BTB_idx] <= update_Tag;
                     valid[update_BTB_idx] <= 1;
                     BTB[update_BTB_idx] <= ID_next_pc;
-                    if (PHT[update_PHT_idx] < 3) begin
-                        PHT[update_PHT_idx] <= PHT[update_PHT_idx] + 1;
-                    end
+                    case (PHT[update_PHT_idx])
+                        0: PHT[update_PHT_idx] <= 1;
+                        1: PHT[update_PHT_idx] <= 3;
+                        2: PHT[update_PHT_idx] <= 3;
+                        3: PHT[update_PHT_idx] <= 3;
+                        default: PHT[update_PHT_idx] <= 2;
+                    endcase
                 end
                 else begin
-                    if (PHT[update_PHT_idx] > 0) begin
-                        PHT[update_PHT_idx] <= PHT[update_PHT_idx] - 1;
-                    end
+                    case (PHT[update_PHT_idx])
+                        0: PHT[update_PHT_idx] <= 0;
+                        1: PHT[update_PHT_idx] <= 0;
+                        2: PHT[update_PHT_idx] <= 0;
+                        3: PHT[update_PHT_idx] <= 2;
+                        default: PHT[update_PHT_idx] <= 2;
+                    endcase
                 end
             end
         end
