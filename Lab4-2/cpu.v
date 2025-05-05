@@ -336,7 +336,13 @@ module cpu(input reset,                     // positive reset signal
   );
 
   Gshare gshare(
-    .IF_pc(IF_pc),
+    .clk (clk),
+    .reset (reset),
+    .IF_pc (IF_pc),
+    .ID_branch (ID_branch),
+    .ID_bcond (ID_bcond),
+    .IF_ID_pc (IF_ID_pc),
+    .ID_next_pc (ID_next_pc),
     .predicted_pc(predicted_pc)
   );
 
