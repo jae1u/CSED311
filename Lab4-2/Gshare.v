@@ -14,7 +14,7 @@ module Gshare(
     reg valid[31:0];
     reg [31:0] BTB[31:0];
     reg [1:0] PHT[31:0];
-    reg [5:0] BHSR;
+    reg [4:0] BHSR;
 
     integer i;
 
@@ -22,8 +22,8 @@ module Gshare(
     wire [31:7] update_Tag = IF_ID_pc[31:7];
     wire [4:0] BTB_idx = IF_pc[6:2];
     wire [4:0] update_BTB_idx = IF_ID_pc[6:2];
-    wire [4:0] PHT_idx = BTB_idx ^ BHSR[5:1];
-    wire [4:0] update_PHT_idx = update_BTB_idx ^ BHSR[4:0];
+    wire [4:0] PHT_idx = BTB_idx ^ BHSR;
+    wire [4:0] update_PHT_idx = update_BTB_idx ^ BHSR;
 
     always @(*) begin
         if ((TagTable[BTB_idx] == Tag) && valid[BTB_idx] && (PHT[PHT_idx] >= 2)) begin
@@ -46,7 +46,7 @@ module Gshare(
         end
         else begin
             if (ID_branch && !is_stall) begin
-                BHSR <= {ID_bcond, BHSR[5:1]};
+                BHSR <= {ID_bcond, BHSR[4:1]};
                 if (ID_bcond) begin
                     TagTable[update_BTB_idx] <= update_Tag;
                     valid[update_BTB_idx] <= 1;
