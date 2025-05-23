@@ -12,7 +12,7 @@
 using namespace std;
 #include "Vtop.h"
 
-#define MAX_SIM_TIME 50000
+#define MAX_SIM_TIME 100000
 int sim_time = 0;
 int total_cycle = 0;
 
@@ -32,9 +32,10 @@ int main(int argc, char** argv, char** env) {
     // string filename = "./student_tb/answer_ifelse.txt";
     // string filename = "./student_tb/answer_loop.txt";
     // string filename = "./student_tb/answer_non-controlflow_with_data_forwarding.txt";
-    string filename = "./student_tb/answer_recursive.txt";
+    // string filename = "./student_tb/answer_recursive.txt";
     // string filename = "./Lab5_student_tb/naive_ripes_result.txt";
     // string filename = "./Lab5_student_tb/opt_ripes_result.txt";
+    string filename = "./test.txt";
     ifstream file(filename);
     stringstream ss;
     string reg_hex;

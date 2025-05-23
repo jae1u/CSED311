@@ -26,9 +26,10 @@ module InstMemory #(parameter MEM_DEPTH = 16384) (input reset,
         // $readmemh("./student_tb/ifelse_mem.txt", mem);
         // $readmemh("./student_tb/loop_mem.txt", mem);
         // $readmemh("./student_tb/non-controlflow_mem.txt", mem);
-        $readmemh("./student_tb/recursive_mem.txt", mem);
+        // $readmemh("./student_tb/recursive_mem.txt", mem);
         // $readmemh("./Lab5_student_tb/naive_matmul_unroll.mem", mem);
         // $readmemh("./Lab5_student_tb/opt_matmul_unroll.mem", mem);
+        $readmemh("./test.mem", mem);
     end
   end
 
