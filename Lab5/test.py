@@ -21,6 +21,7 @@ for name, txt_path, mem_path in tests:
 
     if output:
         print(f"==== {name} ====")
+        print(output[-38])
         print(output[-35])
         print(output[-1])
         print()

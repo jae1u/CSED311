@@ -305,6 +305,31 @@ module cpu(input reset,                     // positive reset signal
   wire cache_busy = using_cache && !cache_is_output_valid;
   assign MEM_dout = cache_dout;
 
+  reg [31:0] cache_access_count;
+  reg [31:0] cache_hit_count;
+  always @(posedge clk) begin
+    if (reset) begin
+      cache_access_count <= 0;
+      cache_hit_count <= 0;
+    end
+    else if (cache_is_output_valid) begin
+      cache_access_count <= cache_access_count + 1;
+      if (cache_is_hit) begin
+        cache_hit_count <= cache_hit_count + 1;
+      end
+    end
+    if (!reset && EX_MEM_halt) begin
+      $display("Cache Access Count: %0d", cache_access_count);
+      $display("Cache Hit Count: %0d", cache_hit_count);
+      if (cache_access_count != 0) begin
+        $display("Cache Hit Rate: %f", cache_hit_count * 1.0 / cache_access_count);
+      end
+      else begin
+        $display("Cache Hit Rate: N/A");
+      end
+    end
+  end
+
   // Update MEM/WB pipeline registers here
   always @(posedge clk) begin
     if (reset) begin
