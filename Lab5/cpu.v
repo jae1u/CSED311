@@ -26,12 +26,18 @@ module cpu(input reset,                     // positive reset signal
   wire [1:0] ForwardA;          // From the hazard detection unit
   wire [1:0] ForwardB;          // From the hazard detection unit
   wire [31:0] predicted_pc;
+  wire cache_is_ready;
+  wire cache_is_output_valid;
+  wire [31:0] cache_dout;
+  wire cache_is_hit;
 
   /***** Register declarations *****/
   reg [31:0] next_pc;
   reg is_stall;
 
   assign is_halted = MEM_WB_halt;
+  wire pipeline_stall = is_stall || cache_busy;
+
   always @(*) begin
     if (EX_jalr_flush) begin
       next_pc = EX_next_pc;
@@ -39,14 +45,14 @@ module cpu(input reset,                     // positive reset signal
     else if (ID_jal_branch_flush) begin
       next_pc = ID_next_pc;
     end
-    else if (is_stall) begin
+    else if (pipeline_stall) begin
       next_pc = IF_pc;
     end
     else begin
       next_pc = predicted_pc;
     end
   end
-  
+
   /***** IF/ID pipeline registers *****/
   reg [31:0] IF_ID_pc;       // will be used in ID stage
   reg [31:0] IF_ID_inst;     // will be used in ID stage
@@ -90,6 +96,7 @@ module cpu(input reset,                     // positive reset signal
   // From the control unit
   reg MEM_WB_reg_write;      // will be used in WB stage
   // From others
+  reg [31:0] MEM_WB_pc;
   reg [4:0] MEM_WB_rd;
   reg [31:0] MEM_WB_rd_din;
   reg MEM_WB_halt;
@@ -117,7 +124,7 @@ module cpu(input reset,                     // positive reset signal
       IF_ID_inst <= 0;
       IF_ID_pc <= 0;
     end
-    else if (!is_stall) begin
+    else if (!pipeline_stall) begin
       IF_ID_inst <= IF_inst;   // will be used in ID stage
       IF_ID_pc <= IF_pc;       // will be used in ID stage
     end
@@ -178,11 +185,11 @@ module cpu(input reset,                     // positive reset signal
     end
   end
   wire [31:0] ID_next_pc = (ID_is_jal || ID_bcond) ? (IF_ID_pc + ID_imm_gen_out) : IF_ID_pc + 4;
-  wire ID_jal_branch_flush = (IF_ID_inst != 0) && (ID_next_pc != IF_pc) && !is_stall;
+  wire ID_jal_branch_flush = (IF_ID_inst != 0) && (ID_next_pc != IF_pc) && !pipeline_stall;
 
   // Update ID/EX pipeline registers here
   always @(posedge clk) begin
-    if (reset || is_stall || EX_jalr_flush) begin
+    if (reset || ((is_stall || EX_jalr_flush) && !cache_busy)) begin
       // From the control unit
       ID_EX_alu_op <= 0;       // will be used in EX stage
       ID_EX_alu_src <= 0;      // will be used in EX stage
@@ -206,7 +213,7 @@ module cpu(input reset,                     // positive reset signal
       ID_EX_rs2 <= 0;
       ID_EX_inst <= 0;
     end
-    else begin
+    else if (!cache_busy) begin
       // From the control unit
       ID_EX_alu_op <= ID_ALUOp;             // will be used in EX stage
       ID_EX_alu_src <= ID_alu_src;          // will be used in EX stage
@@ -264,7 +271,7 @@ module cpu(input reset,                     // positive reset signal
       EX_MEM_rd <= 0;
       EX_MEM_halt <= 0;
     end
-    else begin
+    else if (!cache_busy) begin
       // From the control unit
       EX_MEM_mem_write <= ID_EX_mem_write;     // will be used in MEM stage
       EX_MEM_mem_read <= ID_EX_mem_read;       // will be used in MEM stage
@@ -280,16 +287,23 @@ module cpu(input reset,                     // positive reset signal
     end
   end
 
-  // ---------- Data Memory ----------
-  DataMemory dmem(
-    .reset (reset),                  // input
-    .clk (clk),                      // input
-    .addr (EX_MEM_alu_out),          // input
-    .din (EX_MEM_dmem_data),         // input
-    .mem_read (EX_MEM_mem_read),     // input
-    .mem_write (EX_MEM_mem_write),   // input
-    .dout (MEM_dout)                 // output
+  // ---------- Cache ----------
+  Cache #(.LINE_SIZE(16), .NUM_SETS(4), .NUM_WAYS(4)) cache(
+    .reset(reset),
+    .clk(clk),
+    .is_input_valid(EX_MEM_mem_read || EX_MEM_mem_write),
+    .addr(EX_MEM_alu_out),
+    .mem_read(EX_MEM_mem_read),
+    .mem_write(EX_MEM_mem_write),
+    .din(EX_MEM_dmem_data),
+    .is_ready(cache_is_ready),
+    .is_output_valid(cache_is_output_valid),
+    .dout(cache_dout),
+    .is_hit(cache_is_hit)
   );
+  wire using_cache = EX_MEM_mem_read || EX_MEM_mem_write;
+  wire cache_busy = using_cache && !cache_is_output_valid;
+  assign MEM_dout = cache_dout;
 
   // Update MEM/WB pipeline registers here
   always @(posedge clk) begin
@@ -300,14 +314,16 @@ module cpu(input reset,                     // positive reset signal
       MEM_WB_rd_din <= 0;
       MEM_WB_halt <= 0;
       MEM_WB_rd <= 0;
+      MEM_WB_pc <= 0;
     end
-    else begin
+    else if (!cache_busy) begin
       // From the control unit
       MEM_WB_reg_write <= EX_MEM_reg_write;   // will be used in WB stage
       // From others
       MEM_WB_rd_din <= EX_MEM_pc_to_reg ? (EX_MEM_pc + 4): (EX_MEM_mem_to_reg ? MEM_dout : EX_MEM_alu_out);
       MEM_WB_halt <= EX_MEM_halt;
       MEM_WB_rd <= EX_MEM_rd;
+      MEM_WB_pc <= EX_MEM_pc;
     end
   end
 
@@ -338,7 +354,7 @@ module cpu(input reset,                     // positive reset signal
   Gshare gshare(
     .clk (clk),
     .reset (reset),
-    .is_stall (is_stall),
+    .is_stall (pipeline_stall),
     .IF_pc (IF_pc),
     .ID_branch (ID_branch || ID_is_jal),
     .ID_bcond (ID_bcond || ID_is_jal),
