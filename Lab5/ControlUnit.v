@@ -20,8 +20,8 @@ module ControlUnit (
     assign mem_read = (part_of_inst == `LOAD);
     assign mem_to_reg = (part_of_inst == `LOAD);
     assign mem_write = (part_of_inst == `STORE);
-    assign alu_src = (part_of_inst != `ARITHMETIC) && (part_of_inst != `BRANCH);
-    assign write_enable = (part_of_inst != `STORE) && (part_of_inst != `BRANCH);
+    assign alu_src = (part_of_inst != `ARITHMETIC) && (part_of_inst != `BRANCH) && (part_of_inst != 0);
+    assign write_enable = (part_of_inst != `STORE) && (part_of_inst != `BRANCH) && (part_of_inst != 0);
     assign pc_to_reg = (part_of_inst == `JAL) || (part_of_inst == `JALR);
     assign alu_op = part_of_inst;
     assign is_ecall = (part_of_inst == `ECALL);
